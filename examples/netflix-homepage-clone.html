@@ -1,0 +1,1117 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Netflix</title>
+  <style>
+    /* ===========================================================
+       Tokens
+       =========================================================== */
+    :root {
+      --bg: #141414;
+      --surface: #1c1c1c;
+      --surface-2: #242424;
+      --fg: #ffffff;
+      --fg-muted: #b3b3b3;
+      --fg-dim: #6e6e6e;
+      --border: rgba(255, 255, 255, 0.08);
+      --border-strong: rgba(255, 255, 255, 0.16);
+      --accent: #e50914;
+      --accent-hover: #f6121d;
+      --shadow-lg: 0 16px 40px rgba(0, 0, 0, 0.5);
+      --shadow-card: 0 8px 24px rgba(0, 0, 0, 0.5);
+      --top-nav-h: 68px;
+      --top-nav-bg: rgba(20, 20, 20, 0.0);
+      --top-nav-bg-scrolled: rgba(20, 20, 20, 0.92);
+      --row-vh: 220px;
+      --card-w: 260px;
+      --radius-card: 4px;
+    }
+
+    /* ===========================================================
+       Reset
+       =========================================================== */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; }
+    html { scroll-behavior: smooth; }
+    body {
+      background: var(--bg);
+      color: var(--fg);
+      font: 16px/1.5 "Helvetica Neue", Helvetica, Arial, sans-serif;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      overflow-x: hidden;
+    }
+    a { color: inherit; text-decoration: none; }
+    button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
+    img { display: block; max-width: 100%; }
+    ::selection { background: var(--accent); color: #fff; }
+
+    /* ===========================================================
+       Top nav
+       =========================================================== */
+    .topnav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      height: var(--top-nav-h);
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      padding: 0 56px;
+      background: var(--top-nav-bg);
+      transition: background 0.25s ease;
+      will-change: background;
+    }
+    .topnav.is-scrolled { background: var(--top-nav-bg-scrolled); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
+
+    .topnav__logo {
+      font-family: "Bebas Neue", "Helvetica Neue", Arial, sans-serif;
+      font-size: 32px;
+      letter-spacing: 0.04em;
+      color: var(--accent);
+      line-height: 1;
+      margin-right: 32px;
+      user-select: none;
+    }
+    .topnav__logo:hover { color: var(--accent-hover); }
+
+    .topnav__menu { display: flex; gap: 22px; flex: 1; }
+    .topnav__menu a {
+      color: var(--fg-muted);
+      font-size: 14px;
+      font-weight: 500;
+      transition: color 0.15s ease;
+    }
+    .topnav__menu a:hover, .topnav__menu a.is-active { color: var(--fg); }
+
+    .topnav__actions { display: flex; align-items: center; gap: 22px; }
+    .icon-btn {
+      width: 36px; height: 36px;
+      display: grid; place-items: center;
+      border-radius: 50%;
+      color: var(--fg);
+      transition: background 0.15s ease;
+    }
+    .icon-btn:hover { background: rgba(255, 255, 255, 0.08); }
+    .icon-btn svg { width: 20px; height: 20px; fill: currentColor; }
+
+    .search {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+    .search__input {
+      width: 0;
+      padding: 0;
+      background: transparent;
+      border: 0;
+      color: var(--fg);
+      font-size: 14px;
+      transition: width 0.25s ease, padding 0.25s ease, border-color 0.25s ease;
+      border-bottom: 1px solid transparent;
+      outline: none;
+    }
+    .search.is-open .search__input {
+      width: 220px;
+      padding: 6px 8px;
+      border-bottom-color: var(--fg);
+    }
+    .search.is-open .search__input::placeholder { color: var(--fg-dim); }
+
+    .bell { position: relative; }
+    .bell__dot {
+      position: absolute;
+      top: 6px; right: 6px;
+      width: 8px; height: 8px;
+      background: var(--accent);
+      border-radius: 50%;
+      box-shadow: 0 0 0 2px var(--bg);
+    }
+
+    .profile { position: relative; display: flex; align-items: center; gap: 6px; padding: 4px 6px; border-radius: 4px; transition: background 0.15s ease; }
+    .profile:hover { background: rgba(255, 255, 255, 0.08); }
+    .profile__avatar {
+      width: 32px; height: 32px;
+      border-radius: 4px;
+      background: linear-gradient(135deg, #6a3a8c 0%, #b13a72 50%, #e58a3a 100%);
+      display: grid; place-items: center;
+      color: #fff;
+      font-size: 13px;
+      font-weight: 600;
+    }
+    .profile__caret { width: 10px; height: 10px; fill: var(--fg); transition: transform 0.2s ease; }
+    .profile.is-open .profile__caret { transform: rotate(180deg); }
+
+    .profile__menu {
+      position: absolute;
+      top: calc(100% + 12px); right: 0;
+      min-width: 200px;
+      background: rgba(0, 0, 0, 0.92);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 8px 0;
+      box-shadow: var(--shadow-lg);
+      opacity: 0;
+      visibility: hidden;
+      transform: translateY(-6px);
+      transition: opacity 0.15s ease, transform 0.15s ease, visibility 0.15s;
+    }
+    .profile.is-open .profile__menu { opacity: 1; visibility: visible; transform: translateY(0); }
+    .profile__menu a {
+      display: block;
+      padding: 8px 16px;
+      font-size: 13px;
+      color: var(--fg);
+      transition: background 0.15s ease;
+    }
+    .profile__menu a:hover { background: rgba(255, 255, 255, 0.08); }
+    .profile__menu hr { border: 0; border-top: 1px solid var(--border); margin: 6px 0; }
+
+    /* ===========================================================
+       Hero billboard
+       =========================================================== */
+    .hero {
+      position: relative;
+      height: 86vh;
+      min-height: 560px;
+      max-height: 820px;
+      width: 100%;
+      overflow: hidden;
+      isolation: isolate;
+    }
+    .hero__bg {
+      position: absolute; inset: 0;
+      background-size: cover;
+      background-position: center 20%;
+      transform: scale(1.04);
+      transition: opacity 0.6s ease;
+      /* Netflix-authentic: slow ken-burns drift on the billboard */
+      animation: kenburns 26s ease-in-out infinite alternate;
+    }
+    @keyframes kenburns {
+      from { transform: scale(1.04) translateX(0); }
+      to   { transform: scale(1.12) translateX(-1.6%); }
+    }
+    /* Staggered billboard entrance: tag → title → meta → desc → actions */
+    .hero__inner > * { opacity: 0; transform: translateY(22px); animation: rise-in 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
+    .hero__inner > *:nth-child(1) { animation-delay: 0.15s; }
+    .hero__inner > *:nth-child(2) { animation-delay: 0.3s; }
+    .hero__inner > *:nth-child(3) { animation-delay: 0.45s; }
+    .hero__inner > *:nth-child(4) { animation-delay: 0.6s; }
+    .hero__inner > *:nth-child(5) { animation-delay: 0.75s; }
+    @keyframes rise-in {
+      from { opacity: 0; transform: translateY(22px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    /* Nav fades in from black, like the real load */
+    .topnav { animation: fade-down 0.8s ease 0.1s both; }
+    @keyframes fade-down {
+      from { opacity: 0; transform: translateY(-14px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    /* Rows cascade in on scroll */
+    .row { opacity: 0; transform: translateY(30px); transition: opacity 0.6s ease, transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1); }
+    .row.is-visible { opacity: 1; transform: translateY(0); }
+    @media (prefers-reduced-motion: reduce) {
+      .hero__bg, .hero__inner > *, .nav { animation: none; }
+      .hero__inner > * { opacity: 1; transform: none; }
+      .row { opacity: 1; transform: none; transition: none; }
+    }
+    .hero__bg::after {
+      content: "";
+      position: absolute; inset: 0;
+      background:
+        linear-gradient(180deg, rgba(20, 20, 20, 0) 50%, rgba(20, 20, 20, 0.85) 100%),
+        linear-gradient(90deg, rgba(20, 20, 20, 0.85) 0%, rgba(20, 20, 20, 0.3) 60%, rgba(20, 20, 20, 0) 100%);
+    }
+
+    .hero__inner {
+      position: relative;
+      z-index: 2;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 0 56px;
+      max-width: 720px;
+    }
+    .hero__tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--fg-muted);
+      margin-bottom: 16px;
+    }
+    .hero__tag::before {
+      content: "";
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--accent);
+    }
+    .hero__title {
+      font-family: "Bebas Neue", "Helvetica Neue", Arial, sans-serif;
+      font-size: clamp(56px, 7vw, 96px);
+      line-height: 1.0;
+      letter-spacing: 0.01em;
+      text-shadow: 0 2px 12px rgba(0, 0, 0, 0.6);
+    }
+    .hero__meta {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin: 14px 0 18px;
+      font-size: 14px;
+      color: var(--fg-muted);
+    }
+    .hero__match {
+      color: #46d369;
+      font-weight: 700;
+    }
+    .hero__meta .dot { width: 4px; height: 4px; border-radius: 50%; background: var(--fg-muted); display: inline-block; }
+    .hero__meta .pill {
+      padding: 2px 8px;
+      border: 1px solid var(--fg-muted);
+      border-radius: 2px;
+      font-size: 12px;
+    }
+    .hero__desc {
+      font-size: 16px;
+      line-height: 1.5;
+      color: #e6e6e6;
+      max-width: 56ch;
+      text-shadow: 0 1px 6px rgba(0, 0, 0, 0.6);
+      margin-bottom: 24px;
+    }
+    .hero__actions { display: flex; gap: 12px; flex-wrap: wrap; }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 22px;
+      border-radius: 4px;
+      font-size: 16px;
+      font-weight: 600;
+      letter-spacing: 0.01em;
+      transition: background 0.15s ease, color 0.15s ease, opacity 0.15s ease;
+    }
+    .btn svg { width: 22px; height: 22px; fill: currentColor; }
+    .btn--primary {
+      background: #ffffff;
+      color: #141414;
+    }
+    .btn--primary:hover { background: rgba(255, 255, 255, 0.78); }
+    .btn--secondary {
+      background: rgba(109, 109, 110, 0.7);
+      color: #ffffff;
+      backdrop-filter: blur(2px);
+    }
+    .btn--secondary:hover { background: rgba(109, 109, 110, 0.5); }
+
+    .hero__pager {
+      position: absolute;
+      bottom: 80px;
+      right: 56px;
+      z-index: 3;
+      display: flex;
+      gap: 8px;
+    }
+    .hero__pager button {
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.3);
+      transition: background 0.15s ease, width 0.2s ease;
+    }
+    .hero__pager button.is-active { background: #ffffff; width: 28px; border-radius: 999px; }
+
+    /* ===========================================================
+       Carousel rows
+       =========================================================== */
+    .rows {
+      position: relative;
+      z-index: 4;
+      margin-top: -80px;
+      padding-bottom: 80px;
+    }
+
+    .row {
+      position: relative;
+      margin-bottom: 36px;
+    }
+    .row__header {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      padding: 0 56px;
+      margin-bottom: 12px;
+    }
+    .row__title {
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: -0.005em;
+    }
+    .row__more {
+      font-size: 13px;
+      color: var(--fg-muted);
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      transition: color 0.15s ease;
+    }
+    .row__more:hover { color: var(--fg); }
+
+    .row__viewport {
+      position: relative;
+      padding: 0 56px;
+    }
+    .row__track-wrap {
+      overflow: hidden;
+      padding: 30px 0;
+      margin: -30px 0;
+    }
+    .row__track {
+      display: flex;
+      gap: 8px;
+      transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+      will-change: transform;
+    }
+
+    .row__nav {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 48px; height: 96px;
+      background: rgba(20, 20, 20, 0.7);
+      color: #fff;
+      display: grid; place-items: center;
+      opacity: 0;
+      transition: opacity 0.2s ease, background 0.15s ease;
+      z-index: 5;
+      border-radius: 2px;
+    }
+    .row__nav:hover { background: rgba(20, 20, 20, 0.9); }
+    .row__nav svg { width: 28px; height: 28px; fill: currentColor; }
+    .row__nav--prev { left: 8px; }
+    .row__nav--next { right: 8px; }
+    .row:hover .row__nav { opacity: 1; }
+    .row__nav[disabled] { opacity: 0 !important; pointer-events: none; }
+
+    /* ===========================================================
+       Card
+       =========================================================== */
+    .card {
+      flex: 0 0 var(--card-w);
+      width: var(--card-w);
+      aspect-ratio: 16 / 9;
+      position: relative;
+      border-radius: var(--radius-card);
+      overflow: hidden;
+      background: var(--surface);
+      cursor: pointer;
+      transform-origin: center;
+      transition: transform 0.28s cubic-bezier(0.2, 0.8, 0.2, 1),
+                  box-shadow 0.28s ease,
+                  z-index 0s 0.14s;
+      will-change: transform;
+    }
+    .card__poster {
+      position: absolute; inset: 0;
+      background-size: cover;
+      background-position: center;
+      transition: transform 0.4s ease;
+    }
+    .card__overlay {
+      position: absolute; inset: 0;
+      background: linear-gradient(180deg, rgba(0,0,0,0) 50%, rgba(0,0,0,0.85) 100%);
+      opacity: 0;
+      transition: opacity 0.2s ease;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      padding: 14px 12px 10px;
+      color: #fff;
+    }
+    .card__rank {
+      position: absolute;
+      top: 6px; left: 8px;
+      font-family: "Bebas Neue", "Helvetica Neue", Arial, sans-serif;
+      font-size: 28px;
+      color: #fff;
+      text-shadow: 0 2px 8px rgba(0,0,0,0.7);
+      letter-spacing: 0.02em;
+      line-height: 1;
+    }
+    .card__badge {
+      position: absolute;
+      top: 8px; right: 8px;
+      padding: 2px 6px;
+      background: var(--accent);
+      color: #fff;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      border-radius: 2px;
+    }
+    .card__title {
+      font-size: 13px;
+      font-weight: 600;
+      line-height: 1.25;
+      margin-bottom: 4px;
+      max-height: 2.5em;
+      overflow: hidden;
+    }
+    .card__meta {
+      font-size: 11px;
+      color: var(--fg-muted);
+      display: flex; gap: 6px;
+    }
+    .card__match {
+      color: #46d369;
+      font-weight: 700;
+    }
+    .card__icons {
+      display: flex;
+      gap: 6px;
+      margin-top: 6px;
+    }
+    .card__icons span {
+      width: 22px; height: 22px;
+      border-radius: 50%;
+      border: 1px solid rgba(255,255,255,0.6);
+      display: grid; place-items: center;
+      color: #fff;
+      font-size: 11px;
+    }
+
+    /* hover state — scale + reveal overlay */
+    .row.is-hovering .card.is-active,
+    .card.is-active {
+      transform: scale(1.32);
+      box-shadow: var(--shadow-card);
+      z-index: 10;
+      transition: transform 0.28s cubic-bezier(0.2, 0.8, 0.2, 1),
+                  box-shadow 0.28s ease,
+                  z-index 0s;
+    }
+    .card.is-active .card__overlay { opacity: 1; }
+    .card.is-active .card__poster { transform: scale(1.05); }
+
+    /* large card on hover */
+    .card--large { flex-basis: 320px; width: 320px; }
+    .card--tall { flex-basis: 200px; width: 200px; aspect-ratio: 2 / 3; }
+    .card--tall .card__rank { font-size: 36px; }
+
+    /* ===========================================================
+       Top-10 row special layout (rank + poster)
+       =========================================================== */
+    .row--top .row__track {
+      align-items: flex-end;
+      gap: 0;
+    }
+    .row--top .top-card {
+      display: flex;
+      align-items: flex-end;
+      flex: 0 0 auto;
+      margin-right: 12px;
+      transition: transform 0.28s cubic-bezier(0.2, 0.8, 0.2, 1);
+      transform-origin: bottom left;
+    }
+    .row--top .top-card__rank {
+      font-family: "Bebas Neue", "Helvetica Neue", Arial, sans-serif;
+      font-size: 180px;
+      line-height: 0.85;
+      color: transparent;
+      -webkit-text-stroke: 3px #6e6e6e;
+      margin-right: -36px;
+      z-index: 1;
+      letter-spacing: -0.02em;
+    }
+    .row--top .top-card .card { width: 260px; aspect-ratio: 16/9; }
+    .row--top .top-card .card.is-active {
+      transform: scale(1.18);
+    }
+    .row--top .top-card:hover { transform: scale(1.04); z-index: 10; }
+    .row--top .top-card:hover .card { box-shadow: var(--shadow-card); }
+
+    /* ===========================================================
+       Footer
+       =========================================================== */
+    footer {
+      padding: 60px 56px 80px;
+      color: var(--fg-muted);
+      font-size: 13px;
+    }
+    .footer__socials { display: flex; gap: 18px; margin-bottom: 24px; }
+    .footer__socials a { width: 36px; height: 36px; display: grid; place-items: center; border-radius: 50%; }
+    .footer__socials a:hover { background: rgba(255,255,255,0.08); }
+    .footer__socials svg { width: 20px; height: 20px; fill: currentColor; }
+    .footer__cols { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px 32px; max-width: 1000px; margin-bottom: 24px; }
+    .footer__cols a { display: block; padding: 4px 0; font-size: 13px; }
+    .footer__cols a:hover { text-decoration: underline; }
+    .footer__service { margin-top: 16px; font-size: 12px; }
+    .footer__copy { margin-top: 14px; font-size: 12px; }
+
+    /* ===========================================================
+       Reduced motion
+       =========================================================== */
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        transition-duration: 0.01ms !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ===========================================================
+       Top nav
+       =========================================================== -->
+  <header class="topnav" id="topnav" data-od-id="topnav">
+    <a href="#" class="topnav__logo" data-od-id="netflix-logo">NETFLIX</a>
+    <nav class="topnav__menu" aria-label="Primary">
+      <a href="#" class="is-active">Home</a>
+      <a href="#">TV Shows</a>
+      <a href="#">Movies</a>
+      <a href="#">New &amp; Popular</a>
+      <a href="#">My List</a>
+      <a href="#">Browse by Language</a>
+    </nav>
+    <div class="topnav__actions">
+      <div class="search" id="search">
+        <button class="icon-btn" id="searchToggle" aria-label="Search">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 20.3l-5.4-5.4a7.5 7.5 0 1 0-.7.7l5.4 5.4a.5.5 0 0 0 .7-.7zM10.5 16a5.5 5.5 0 1 1 0-11 5.5 5.5 0 0 1 0 11z"/></svg>
+        </button>
+        <input class="search__input" id="searchInput" type="text" placeholder="Titles, people, genres" aria-label="Search" />
+      </div>
+      <button class="icon-btn" aria-label="Notifications" data-od-id="notifications">
+        <span class="bell">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 22a2.4 2.4 0 0 0 2.4-2.4H9.6A2.4 2.4 0 0 0 12 22zm6-6V11a6 6 0 1 0-12 0v5l-2 2v1h16v-1l-2-2z"/></svg>
+          <span class="bell__dot"></span>
+        </span>
+      </button>
+      <div class="profile" id="profile" data-od-id="profile">
+        <span class="profile__avatar">G</span>
+        <svg class="profile__caret" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 10l5 5 5-5z"/></svg>
+        <div class="profile__menu" role="menu">
+          <a href="#">Account</a>
+          <a href="#">Help Center</a>
+          <a href="#">Manage Profiles</a>
+          <hr />
+          <a href="#">Sign out of Netflix</a>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ===========================================================
+       Hero billboard
+       =========================================================== -->
+  <section class="hero" id="hero" data-od-id="hero-billboard">
+    <div class="hero__bg" id="heroBg" style="background-image: url('https://images.unsplash.com/photo-1574375927938-d5a98e8ffe85?auto=format&fit=crop&w=2400&q=80');"></div>
+    <div class="hero__inner">
+      <span class="hero__tag" id="heroTag">S E R I E S</span>
+      <h1 class="hero__title" id="heroTitle">Stranger Things</h1>
+      <div class="hero__meta">
+        <span class="hero__match" id="heroMatch">98% Match</span>
+        <span class="dot"></span>
+        <span id="heroYear">2024</span>
+        <span class="dot"></span>
+        <span class="pill">TV-14</span>
+        <span class="dot"></span>
+        <span id="heroSeasons">4 Seasons</span>
+      </div>
+      <p class="hero__desc" id="heroDesc">When a young boy vanishes, a small town uncovers a mystery involving secret experiments, terrifying supernatural forces, and one very strange little girl.</p>
+      <div class="hero__actions">
+        <button class="btn btn--primary" data-od-id="hero-play"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>Play</button>
+        <button class="btn btn--secondary" data-od-id="hero-info"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 7h2v2h-2zm0 4h2v6h-2zm1-9a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm0 18a8 8 0 1 1 0-16 8 8 0 0 1 0 16z"/></svg>More Info</button>
+      </div>
+    </div>
+    <div class="hero__pager" id="heroPager" aria-label="Featured titles">
+      <button class="is-active" data-i="0" aria-label="Slide 1"></button>
+      <button data-i="1" aria-label="Slide 2"></button>
+      <button data-i="2" aria-label="Slide 3"></button>
+      <button data-i="3" aria-label="Slide 4"></button>
+    </div>
+  </section>
+
+  <!-- ===========================================================
+       Rows
+       =========================================================== -->
+  <main class="rows" id="rows"></main>
+
+  <!-- ===========================================================
+       Footer
+       =========================================================== -->
+  <footer data-od-id="footer">
+    <div class="footer__socials">
+      <a href="#" aria-label="Facebook"><svg viewBox="0 0 24 24"><path d="M22 12a10 10 0 1 0-11.6 9.9V15h-2.5v-3h2.5V9.7c0-2.5 1.5-3.9 3.8-3.9 1.1 0 2.2.2 2.2.2v2.5h-1.3c-1.2 0-1.6.8-1.6 1.6V12h2.8l-.4 3h-2.3v6.9A10 10 0 0 0 22 12z"/></svg></a>
+      <a href="#" aria-label="Instagram"><svg viewBox="0 0 24 24"><path d="M12 2.2c3.2 0 3.6 0 4.8.07 1.2.06 1.8.25 2.2.42.6.23 1 .5 1.4.95.5.45.7.85 1 1.4.16.4.36 1 .42 2.2.07 1.2.07 1.6.07 4.8s0 3.6-.07 4.8c-.06 1.2-.25 1.8-.42 2.2-.23.6-.5 1-.95 1.4-.45.5-.85.7-1.4 1-.4.16-1 .36-2.2.42-1.2.07-1.6.07-4.8.07s-3.6 0-4.8-.07c-1.2-.06-1.8-.25-2.2-.42-.6-.23-1-.5-1.4-.95-.5-.45-.7-.85-1-1.4-.16-.4-.36-1-.42-2.2C2.2 15.6 2.2 15.2 2.2 12s0-3.6.07-4.8c.06-1.2.25-1.8.42-2.2.23-.6.5-1 .95-1.4.45-.5.85-.7 1.4-1 .4-.16 1-.36 2.2-.42C8.4 2.2 8.8 2.2 12 2.2zm0 2c-3.1 0-3.5 0-4.7.07-1 0-1.6.2-1.9.34-.5.2-.8.4-1.1.7-.3.3-.5.6-.7 1.1-.13.3-.32.9-.34 1.9C4.2 8.5 4.2 8.9 4.2 12s0 3.5.07 4.7c0 1 .2 1.6.34 1.9.2.5.4.8.7 1.1.3.3.6.5 1.1.7.3.13.9.32 1.9.34 1.2.07 1.6.07 4.7.07s3.5 0 4.7-.07c1 0 1.6-.2 1.9-.34.5-.2.8-.4 1.1-.7.3-.3.5-.6.7-1.1.13-.3.32-.9.34-1.9.07-1.2.07-1.6.07-4.7s0-3.5-.07-4.7c0-1-.2-1.6-.34-1.9-.2-.5-.4-.8-.7-1.1-.3-.3-.6-.5-1.1-.7-.3-.13-.9-.32-1.9-.34C15.5 4.2 15.1 4.2 12 4.2zm0 3.4a4.4 4.4 0 1 1 0 8.8 4.4 4.4 0 0 1 0-8.8zm0 7.2a2.8 2.8 0 1 0 0-5.6 2.8 2.8 0 0 0 0 5.6zm5.6-7.4a1 1 0 1 1-2 0 1 1 0 0 1 2 0z"/></svg></a>
+      <a href="#" aria-label="Twitter"><svg viewBox="0 0 24 24"><path d="M22 5.8c-.7.3-1.5.5-2.3.6.8-.5 1.5-1.3 1.8-2.2-.8.5-1.7.8-2.6 1A4 4 0 0 0 12 8.6c0 .3 0 .6.1.9A11.4 11.4 0 0 1 3 4.6 4 4 0 0 0 4.2 10c-.6 0-1.3-.2-1.8-.5v.1a4 4 0 0 0 3.2 4 4 4 0 0 1-1.8.1 4 4 0 0 0 3.7 2.8A8 8 0 0 1 2 18.3a11.4 11.4 0 0 0 6.2 1.8c7.4 0 11.5-6.2 11.5-11.5v-.5c.8-.6 1.5-1.3 2-2.1z"/></svg></a>
+      <a href="#" aria-label="YouTube"><svg viewBox="0 0 24 24"><path d="M21.6 7.2s-.2-1.4-.8-2c-.7-.8-1.6-.8-2-.9C15.7 4 12 4 12 4s-3.7 0-6.8.3c-.4 0-1.3 0-2 .9-.6.6-.8 2-.8 2S2 8.8 2 10.4v1.2c0 1.6.2 3.2.2 3.2s.2 1.4.8 2c.7.8 1.7.8 2.1.9 1.6.2 6.9.3 6.9.3s3.7 0 6.8-.3c.4 0 1.3 0 2-.9.6-.6.8-2 .8-2s.2-1.6.2-3.2v-1.2c0-1.6-.2-3.2-.2-3.2zM10 14V8l5 3-5 3z"/></svg></a>
+    </div>
+    <div class="footer__cols">
+      <a href="#">Audio Description</a>
+      <a href="#">Help Center</a>
+      <a href="#">Gift Cards</a>
+      <a href="#">Media Center</a>
+      <a href="#">Investor Relations</a>
+      <a href="#">Jobs</a>
+      <a href="#">Terms of Use</a>
+      <a href="#">Privacy</a>
+      <a href="#">Legal Notices</a>
+      <a href="#">Cookie Preferences</a>
+      <a href="#">Corporate Information</a>
+      <a href="#">Contact Us</a>
+    </div>
+    <button class="btn btn--secondary" style="font-size: 13px; padding: 8px 14px;">Service Code</button>
+    <p class="footer__copy">© 2024 Netflix Replica — design study, not affiliated with Netflix, Inc.</p>
+  </footer>
+
+  <script>
+    /* ===========================================================
+       Data — fictional titles for demo
+       =========================================================== */
+    const HERO_SLIDES = [
+      {
+        tag: "S E R I E S",
+        title: "Stranger Things",
+        match: "98% Match",
+        year: "2024",
+        rating: "TV-14",
+        seasons: "4 Seasons",
+        desc: "When a young boy vanishes, a small town uncovers a mystery involving secret experiments, terrifying supernatural forces, and one very strange little girl.",
+        bg: "https://images.unsplash.com/photo-1574375927938-d5a98e8ffe85?auto=format&fit=crop&w=2400&q=80"
+      },
+      {
+        tag: "M O V I E",
+        title: "The Last Horizon",
+        match: "92% Match",
+        year: "2024",
+        rating: "PG-13",
+        seasons: "2h 14m",
+        desc: "A washed-up commander leads humanity's final expedition beyond the edge of known space, where the boundary between reality and the impossible begins to blur.",
+        bg: "https://images.unsplash.com/photo-1518709268805-4e9042af2176?auto=format&fit=crop&w=2400&q=80"
+      },
+      {
+        tag: "S E R I E S",
+        title: "Midnight Crown",
+        match: "96% Match",
+        year: "2023",
+        rating: "TV-MA",
+        seasons: "3 Seasons",
+        desc: "In a kingdom where court intrigue is the deadliest sport, a reluctant heir must outwit a dozen rivals for a throne she never asked to claim.",
+        bg: "https://images.unsplash.com/photo-1578662996442-48f60103fc96?auto=format&fit=crop&w=2400&q=80"
+      },
+      {
+        tag: "M O V I E",
+        title: "Neon Drift",
+        match: "89% Match",
+        year: "2024",
+        rating: "R",
+        seasons: "1h 58m",
+        desc: "An underground street racer is pulled into a heist that could buy her family out of debt — or bury them under the city forever.",
+        bg: "https://images.unsplash.com/photo-1547036967-23d11aacaee0?auto=format&fit=crop&w=2400&q=80"
+      }
+    ];
+
+    // Curated Unsplash imagery per title — atmospheric, dark, cinematic
+    const POSTERS = {
+      scifi: [
+        "https://images.unsplash.com/photo-1446776877081-d282a0f896e2?auto=format&fit=crop&w=800&q=80",
+        "https://images.unsplash.com/photo-1462331940025-496dfbfc7564?auto=format&fit=crop&w=800&q=80",
+        "https://images.unsplash.com/photo-1517976547714-720226b864c1?auto=format&fit=crop&w=800&q=80",
+        "https://images.unsplash.com/photo-1539593608798-2fde08b8e1c2?auto=format&fit=crop&w=800&q=80",
+        "https://images.unsplash.com/photo-1543722530-d2c3201371e7?auto=format&fit=crop&w=800&q=80",
+        "https://images.unsplash.com/photo-1518365050014-70fe7232897f?auto=format&fit=crop&w=800&q=80"
+      ],
+      thriller: [
+        "https://images.unsplash.com/photo-1478720568477-152d9b164e26?auto=format&fit=crop&w=800&q=80",
+        "https://images.unsplash.com/photo-1509347528160-9a9e33742cdb?auto=format&fit=crop&w=800&q=80",
+        "https://images.unsplash.com/photo-1594909122845-11baa439b7bf?auto=format&fit=crop&w=800&q=80",
+        "https://images.unsplash.com/photo-1485846234645-a62644f84728?auto=format&fit=crop&w=800&q=80",
+        "https://images.unsplash.com/photo-1536440136628-849c177e76a1?auto=format&fit=crop&w=800&q=80",
+        "https://images.unsplash.com/photo-1486572788966-cfd3df1f5b42?auto=format&fit=crop&w=800&q=80"
+      ],
+      drama: [
+        "https://images.unsplash.com/photo-1489599735188-90c95a5f8d4a?auto=format&fit=crop&w=800&q=80",
+        "https://images.unsplash.com/photo-1485846234645-a62644f84728?auto=format&fit=crop&w=800&q=80",
+        "https://images.unsplash.com/photo-1542204165-65bf26472b9b?auto=format&fit=crop&w=800&q=80",
+        "https://images.unsplash.com/photo-1518929458119-e5bf444c30f4?auto=format&fit=crop&w=800&q=80",
+        "https://images.unsplash.com/photo-1485846234645-a62644f84728?auto=format&fit=crop&w=800&q=80",
+        "https://images.unsplash.com/photo-1486572788966-cfd3df1f5b42?auto=format&fit=crop&w=800&q=80"
+      ],
+      fantasy: [
+        "https://images.unsplash.com/photo-1518709268805-4e9042af2176?auto=format&fit=crop&w=800&q=80",
+        "https://images.unsplash.com/photo-1534447677768-be436bb09401?auto=format&fit=crop&w=800&q=80",
+        "https://images.unsplash.com/photo-1502136969935-8d8eef54d77b?auto=format&fit=crop&w=800&q=80",
+        "https://images.unsplash.com/photo-1500964757637-c85e8a162699?auto=format&fit=crop&w=800&q=80",
+        "https://images.unsplash.com/photo-1419242902214-272b3f66ee7a?auto=format&fit=crop&w=800&q=80",
+        "https://images.unsplash.com/photo-1444080748397-f442aa95c3e5?auto=format&fit=crop&w=800&q=80"
+      ],
+      crime: [
+        "https://images.unsplash.com/photo-1542204165-65bf26472b9b?auto=format&fit=crop&w=800&q=80",
+        "https://images.unsplash.com/photo-1478720568477-152d9b164e26?auto=format&fit=crop&w=800&q=80",
+        "https://images.unsplash.com/photo-1536440136628-849c177e76a1?auto=format&fit=crop&w=800&q=80",
+        "https://images.unsplash.com/photo-1594909122845-11baa439b7bf?auto=format&fit=crop&w=800&q=80",
+        "https://images.unsplash.com/photo-1486572788966-cfd3df1f5b42?auto=format&fit=crop&w=800&q=80",
+        "https://images.unsplash.com/photo-1509347528160-9a9e33742cdb?auto=format&fit=crop&w=800&q=80"
+      ],
+      romance: [
+        "https://images.unsplash.com/photo-1518929458119-e5bf444c30f4?auto=format&fit=crop&w=800&q=80",
+        "https://images.unsplash.com/photo-1485846234645-a62644f84728?auto=format&fit=crop&w=800&q=80",
+        "https://images.unsplash.com/photo-1542204165-65bf26472b9b?auto=format&fit=crop&w=800&q=80",
+        "https://images.unsplash.com/photo-1489599735188-90c95a5f8d4a?auto=format&fit=crop&w=800&q=80",
+        "https://images.unsplash.com/photo-1486572788966-cfd3df1f5b42?auto=format&fit=crop&w=800&q=80",
+        "https://images.unsplash.com/photo-1536440136628-849c177e76a1?auto=format&fit=crop&w=800&q=80"
+      ]
+    };
+
+    const ROWS = [
+      {
+        title: "Trending Now",
+        kind: "standard",
+        items: titlesOf(POSTERS.scifi, [
+          "Echoes of Tomorrow","Signal Lost","Atlas Protocol","Iron Bloom","Stardust Run","Neon Meridian"
+        ])
+      },
+      {
+        title: "Continue Watching for Gurinder",
+        kind: "standard",
+        items: titlesOf(POSTERS.thriller, [
+          "The Quiet Witness","Glass Tower","Beneath the Surface","Half Light","Vanishing Point","Cold Trail"
+        ])
+      },
+      {
+        title: "Top 10 in Your Country Today",
+        kind: "top10",
+        items: [
+          "Crimson River","The Architect","Static","Paper Kingdom","Outer Reach","Velvet Knife","Last Train Home","The Pact","Salt & Iron","Echo Drift"
+        ]
+      },
+      {
+        title: "Sci-Fi Epics",
+        kind: "standard",
+        items: titlesOf(POSTERS.fantasy, [
+          "Polaris","Stellar Drift","The Long Night","Voidwalker","Aurora","Cassiopeia"
+        ])
+      },
+      {
+        title: "Crime & Investigation",
+        kind: "standard",
+        items: titlesOf(POSTERS.crime, [
+          "The Informant","Buried Lies","Night Court","Mile High","Wire Room","The Verdict"
+        ])
+      },
+      {
+        title: "Drama Picks",
+        kind: "standard",
+        items: titlesOf(POSTERS.drama, [
+          "Bitter End","Open Skies","The Inheritance","Quiet Storm","Aftermath","Three Cities"
+        ])
+      },
+      {
+        title: "Romantic Stories",
+        kind: "standard",
+        items: titlesOf(POSTERS.romance, [
+          "Last Summer","Across the Harbor","Paper Bouquet","Tidal Hearts","House of Mirrors","Northern Light"
+        ])
+      }
+    ];
+
+    function titlesOf(posters, titles) {
+      return titles.map((title, i) => ({
+        title,
+        poster: posters[i % posters.length],
+        match: 88 + Math.floor(Math.random() * 12),
+        year: 2019 + Math.floor(Math.random() * 6),
+        rating: ["TV-14","TV-MA","PG-13","R"][i % 4]
+      }));
+    }
+
+    /* ===========================================================
+       Top nav — scroll background, search, profile menu
+       =========================================================== */
+    const topnav = document.getElementById('topnav');
+    let lastScroll = 0;
+    window.addEventListener('scroll', () => {
+      const y = window.scrollY;
+      topnav.classList.toggle('is-scrolled', y > 60);
+      lastScroll = y;
+    }, { passive: true });
+
+    // Search expand
+    const search = document.getElementById('search');
+    const searchToggle = document.getElementById('searchToggle');
+    const searchInput = document.getElementById('searchInput');
+    searchToggle.addEventListener('click', () => {
+      search.classList.toggle('is-open');
+      if (search.classList.contains('is-open')) {
+        setTimeout(() => searchInput.focus(), 50);
+      }
+    });
+    searchInput.addEventListener('blur', () => {
+      if (!searchInput.value) search.classList.remove('is-open');
+    });
+
+    // Profile dropdown
+    const profile = document.getElementById('profile');
+    profile.addEventListener('click', (e) => {
+      e.stopPropagation();
+      profile.classList.toggle('is-open');
+    });
+    document.addEventListener('click', (e) => {
+      if (!profile.contains(e.target)) profile.classList.remove('is-open');
+    });
+
+    /* ===========================================================
+       Hero — auto-rotating slides
+       =========================================================== */
+    const heroBg = document.getElementById('heroBg');
+    const heroTag = document.getElementById('heroTag');
+    const heroTitle = document.getElementById('heroTitle');
+    const heroMatch = document.getElementById('heroMatch');
+    const heroYear = document.getElementById('heroYear');
+    const heroSeasons = document.getElementById('heroSeasons');
+    const heroDesc = document.getElementById('heroDesc');
+    const heroPager = document.getElementById('heroPager');
+
+    let heroIndex = 0;
+    let heroTimer;
+
+    function paintHero(i) {
+      const s = HERO_SLIDES[i];
+      heroBg.style.opacity = '0';
+      setTimeout(() => {
+        heroBg.style.backgroundImage = `url('${s.bg}')`;
+        heroBg.style.opacity = '1';
+      }, 200);
+      heroTag.textContent = s.tag;
+      heroTitle.textContent = s.title;
+      heroMatch.textContent = s.match;
+      heroYear.textContent = s.year;
+      heroSeasons.textContent = s.seasons;
+      const pill = document.querySelector('.hero__meta .pill');
+      if (pill) pill.textContent = s.rating;
+      heroDesc.textContent = s.desc;
+      Array.from(heroPager.children).forEach((b, j) => {
+        b.classList.toggle('is-active', j === i);
+      });
+    }
+    function startHero() {
+      clearInterval(heroTimer);
+      heroTimer = setInterval(() => {
+        heroIndex = (heroIndex + 1) % HERO_SLIDES.length;
+        paintHero(heroIndex);
+      }, 7000);
+    }
+    Array.from(heroPager.children).forEach((b, j) => {
+      b.addEventListener('click', () => {
+        heroIndex = j;
+        paintHero(j);
+        startHero();
+      });
+    });
+    paintHero(0);
+    startHero();
+
+    /* ===========================================================
+       Render rows
+       =========================================================== */
+    const rowsEl = document.getElementById('rows');
+
+    function cardHTML(item, opts = {}) {
+      const id = 'card-' + item.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+      return `
+        <div class="card${opts.size ? ' card--' + opts.size : ''}" data-od-id="${id}">
+          <div class="card__poster" style="background-image: url('${item.poster}')"></div>
+          ${opts.rank ? `<span class="card__rank">${String(opts.rank).padStart(2,'0')}</span>` : ''}
+          ${opts.badge ? `<span class="card__badge">${opts.badge}</span>` : ''}
+          <div class="card__overlay">
+            <div class="card__title">${item.title}</div>
+            <div class="card__meta">
+              <span class="card__match">${item.match}% Match</span>
+              <span>${item.year}</span>
+              <span>${item.rating}</span>
+            </div>
+            <div class="card__icons" aria-hidden="true">
+              <span title="Watched">✓</span>
+              <span title="Add to list">+</span>
+              <span title="Like">👍</span>
+            </div>
+          </div>
+        </div>`;
+    }
+
+    function renderRow(row, idx) {
+      const sec = document.createElement('section');
+      sec.className = 'row' + (row.kind === 'top10' ? ' row--top' : '');
+      sec.dataset.row = idx;
+
+      if (row.kind === 'top10') {
+        sec.innerHTML = `
+          <div class="row__header">
+            <h2 class="row__title">${row.title}</h2>
+            <a href="#" class="row__more">Explore All</a>
+          </div>
+          <div class="row__viewport">
+            <button class="row__nav row__nav--prev" aria-label="Previous">
+              <svg viewBox="0 0 24 24"><path d="M15.4 7.4 14 6l-6 6 6 6 1.4-1.4L10.8 12z"/></svg>
+            </button>
+            <div class="row__track-wrap">
+              <div class="row__track">
+                ${row.items.map((t, i) => `
+                  <div class="top-card">
+                    <span class="top-card__rank">${String(i + 1).padStart(2,'0')}</span>
+                    ${cardHTML({
+                      title: t,
+                      poster: POSTERS.thriller[i % POSTERS.thriller.length],
+                      match: 95 - i,
+                      year: 2023,
+                      rating: 'TV-MA'
+                    })}
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+            <button class="row__nav row__nav--next" aria-label="Next">
+              <svg viewBox="0 0 24 24"><path d="M8.6 7.4 10 6l6 6-6 6-1.4-1.4L13.2 12z"/></svg>
+            </button>
+          </div>`;
+      } else {
+        sec.innerHTML = `
+          <div class="row__header">
+            <h2 class="row__title">${row.title}</h2>
+            <a href="#" class="row__more">Explore All</a>
+          </div>
+          <div class="row__viewport">
+            <button class="row__nav row__nav--prev" aria-label="Previous">
+              <svg viewBox="0 0 24 24"><path d="M15.4 7.4 14 6l-6 6 6 6 1.4-1.4L10.8 12z"/></svg>
+            </button>
+            <div class="row__track-wrap">
+              <div class="row__track">
+                ${row.items.map(it => cardHTML(it, { badge: 'NEW' })).join('')}
+              </div>
+            </div>
+            <button class="row__nav row__nav--next" aria-label="Next">
+              <svg viewBox="0 0 24 24"><path d="M8.6 7.4 10 6l6 6-6 6-1.4-1.4L13.2 12z"/></svg>
+            </button>
+          </div>`;
+      }
+
+      rowsEl.appendChild(sec);
+      wireRow(sec);
+    }
+
+    function wireRow(sec) {
+      const track = sec.querySelector('.row__track');
+      const wrap = sec.querySelector('.row__track-wrap');
+      const prev = sec.querySelector('.row__nav--prev');
+      const next = sec.querySelector('.row__nav--next');
+
+      let offset = 0;
+      const firstCard = track.querySelector('.card, .top-card');
+      const cardW = firstCard ? firstCard.getBoundingClientRect().width : 260;
+      const gap = 8;
+
+      function step() {
+        const visible = Math.max(1, Math.floor(wrap.clientWidth / (cardW + gap)));
+        return visible * (cardW + gap);
+      }
+      function maxOffset() {
+        return Math.max(0, track.scrollWidth - wrap.clientWidth);
+      }
+      function update() {
+        prev.toggleAttribute('disabled', offset <= 0);
+        next.toggleAttribute('disabled', offset >= maxOffset());
+        track.style.transform = `translateX(${-offset}px)`;
+      }
+
+      prev.addEventListener('click', () => {
+        offset = Math.max(0, offset - step());
+        update();
+      });
+      next.addEventListener('click', () => {
+        offset = Math.min(maxOffset(), offset + step());
+        update();
+      });
+
+      // Hover-active card: keep track of which card is hovered
+      let activeCard = null;
+      track.querySelectorAll('.card').forEach(card => {
+        card.addEventListener('mouseenter', () => {
+          if (activeCard) activeCard.classList.remove('is-active');
+          activeCard = card;
+          card.classList.add('is-active');
+        });
+        card.addEventListener('mouseleave', () => {
+          card.classList.remove('is-active');
+          if (activeCard === card) activeCard = null;
+        });
+      });
+      sec.addEventListener('mouseleave', () => {
+        if (activeCard) {
+          activeCard.classList.remove('is-active');
+          activeCard = null;
+        }
+      });
+
+      update();
+      window.addEventListener('resize', () => {
+        offset = Math.min(offset, maxOffset());
+        update();
+      });
+    }
+
+    ROWS.forEach(renderRow);
+
+    // ── Scroll-reveal: rows cascade in as they enter the viewport ──
+    const revealer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('is-visible');
+          revealer.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.15 });
+    document.querySelectorAll('.row').forEach((row, i) => {
+      row.style.transitionDelay = `${Math.min(i, 4) * 70}ms`;
+      revealer.observe(row);
+    });
+
+    // ── Netflix "N" intro: logo scales in over black, then lifts away ──
+    const intro = document.createElement('div');
+    intro.id = 'nf-intro';
+    intro.innerHTML = '<div id="nf-intro__logo">N</div>';
+    intro.style.cssText = 'position:fixed;inset:0;z-index:9999;background:#000;display:flex;align-items:center;justify-content:center;pointer-events:none;';
+    const logo = intro.querySelector('#nf-intro__logo');
+    logo.style.cssText = `color:#e50914;font-family:"Bebas Neue","Helvetica Neue",Arial,sans-serif;font-weight:700;font-size:38vmin;line-height:1;
+      transform:scale(0.2);opacity:0;
+      animation:nf-logo-in 1.1s cubic-bezier(0.2,0.8,0.2,1) 0.15s forwards, nf-logo-out 0.7s ease 1.9s forwards;
+      text-shadow:0 0 60px rgba(229,9,20,0.55);`;
+    const st = document.createElement('style');
+    st.textContent = `
+      @keyframes nf-logo-in { from { transform:scale(0.2); opacity:0; } 60% { opacity:1; } to { transform:scale(1); opacity:1; } }
+      @keyframes nf-logo-out { to { transform:scale(1.35); opacity:0; } }
+      @keyframes nf-intro-out { to { opacity:0; visibility:hidden; } }
+      @media (prefers-reduced-motion: reduce) { #nf-intro { display:none !important; } }`;
+    document.head.appendChild(st);
+    document.body.appendChild(intro);
+    intro.style.animation = 'nf-intro-out 0.6s ease 2.2s forwards';
+
+    // ── Hero pager dots: auto-advance the billboard every 8s ──
+    const pagers = document.querySelectorAll('.hero__pager button');
+    if (pagers.length > 1) {
+      let pi = 0;
+      setInterval(() => {
+        pi = (pi + 1) % pagers.length;
+        pagers[pi].click();
+      }, 8000);
+    }
+  </script>
+</body>
+</html>
