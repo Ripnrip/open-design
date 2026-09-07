@@ -22,7 +22,8 @@ import { buildElectronStandaloneAuthority } from "../scripts/build-authority.ts"
 import { createElectronStandaloneAuthorityFactory, isElectronStandaloneScope } from "@/adapters/standalone/authority.js";
 import { StandaloneHostControlClient } from "@open-design/standalone";
 import { createStandaloneHostControlTransport } from "@/adapters/standalone/control-client.js";
-import { bindElectronPhysicalResourceSet } from "@/adapters/standalone/physical-resources.js";
+import { bindElectronPhysicalResourceSet, validateElectronPhysicalResourceSet } from "@/adapters/standalone/physical-resources.js";
+import physicalResourceDeclaration from "../config/standalone.json" with { type: "json" };
 import { ElectronStandaloneInstallerClaimLedger } from "@/adapters/standalone/installer-claim.js";
 import { StandaloneHostLifecycle } from "@open-design/standalone";
 import { StandaloneHostLifecycleLedger } from "@open-design/standalone";
@@ -120,10 +121,7 @@ function isProcessAlive(pid: number): boolean {
   catch { return false; }
 }
 
-const physicalResources = {
-  schemaVersion: 1,
-  resources: [{ id: "standalone-runtime", stamp: { source: "standalone", mode: "runtime", app: "standalone" } }],
-} as const;
+const physicalResources = validateElectronPhysicalResourceSet(physicalResourceDeclaration);
 
 describe("Electron production Standalone authority", () => {
   it("accepts only the interactive and derived headless namespaces for its channel", () => {

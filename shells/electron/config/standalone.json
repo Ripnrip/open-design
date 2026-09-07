@@ -8,6 +8,22 @@
         "mode": "runtime",
         "app": "standalone"
       }
+    },
+    {
+      "id": "closure-daemon",
+      "stamp": {
+        "source": "standalone",
+        "mode": "runtime",
+        "app": "daemon"
+      }
+    },
+    {
+      "id": "closure-web",
+      "stamp": {
+        "source": "standalone",
+        "mode": "runtime",
+        "app": "web"
+      }
     }
   ]
 }

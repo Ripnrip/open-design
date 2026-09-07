@@ -46,7 +46,14 @@ describe("Electron physical resource set", () => {
     const configured = JSON.parse(
       await readFile(new URL("../config/standalone.json", import.meta.url), "utf8"),
     ) as unknown;
-    expect(validateElectronPhysicalResourceSet(configured)).toEqual(declaration);
+    expect(validateElectronPhysicalResourceSet(configured)).toEqual({
+      schemaVersion: 1,
+      resources: [
+        declaration.resources[0],
+        { id: "closure-daemon", stamp: { app: "daemon", mode: "runtime", source: "standalone" } },
+        { id: "closure-web", stamp: { app: "web", mode: "runtime", source: "standalone" } },
+      ],
+    });
   });
 
   it("binds every declared identity to the exact Standalone scope", () => {

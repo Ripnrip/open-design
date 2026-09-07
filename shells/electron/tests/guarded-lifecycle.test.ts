@@ -106,6 +106,28 @@ describe("Electron guarded physical lifecycle", () => {
       }));
   });
 
+  it("guards and certifies separately stamped Closure resources, including an orphan", async () => {
+    const resources = [
+      ...resourceSet.resources,
+      { id: "closure-daemon", stamp: { ...stamp, app: "daemon" } },
+      { id: "closure-web", stamp: { ...stamp, app: "web" } },
+    ];
+    const completeSet = { ...resourceSet, resources };
+    const results = resources.map(({ stamp: resourceStamp }, index) => ({
+      stamp: resourceStamp,
+      result: { ...stopped, matchedPids: [42 + index], stoppedPids: [42 + index] },
+    }));
+    sidecar.stopSidecars.mockResolvedValue({ ...stopped, results });
+    const certificate = await withElectronPhysicalResourceSetGuard(completeSet, (guard) => guard.retire());
+    expect(sidecar.withSidecarLifecycleLock).toHaveBeenCalledWith(resources.map(({ stamp }) => stamp), expect.any(Function), {});
+    expect(sidecar.stopSidecars).toHaveBeenCalledWith(resources.map(({ stamp }) => ({ options: {}, stamp })));
+    expect(certificate.resources).toEqual(resources.map(({ id, stamp }, index) => ({ id, stamp, result: results[index]!.result })));
+
+    sidecar.stopSidecars.mockResolvedValue({ ...stopped, results, remainingPids: [44] });
+    await expect(withElectronPhysicalResourceSetGuard(completeSet, (guard) => guard.retire()))
+      .rejects.toEqual(expect.objectContaining({ name: "ElectronPhysicalRetirementError", remainingPids: [44] }));
+  });
+
   it("retires a failed replacement only after the original set and under the same guard", async () => {
     const replacement = Object.freeze({
       ...resourceSet,

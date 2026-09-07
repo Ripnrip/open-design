@@ -16,5 +16,15 @@ it.each([{ survivors: [] }, { survivors: [{ pid: 99 }] }])("reports physical sur
   expect(receipt).not.toHaveProperty("retainedStandaloneReferences");
   expect(sidecar.status).not.toHaveBeenCalled();
   expect(sidecar.stop).toHaveBeenCalledExactlyOnceWith({ app: "electron", channel: "betahyx", mode: "runtime", namespace: "stop-test", source: "tools-pack" });
-  expect(sidecar.find).toHaveBeenCalledExactlyOnceWith({ app: "standalone", channel: "betahyx", mode: "runtime", namespace: "stop-test", source: "standalone" });
+  expect(sidecar.find).toHaveBeenCalledTimes(3);
+  for (const app of ["standalone", "daemon", "web"]) {
+    expect(sidecar.find).toHaveBeenCalledWith({ app, channel: "betahyx", mode: "runtime", namespace: "stop-test", source: "standalone" });
+  }
+});
+
+it("reports an orphaned Closure resource even when the host has already stopped", async () => {
+  sidecar.find.mockImplementation(async ({ app }) => app === "web" ? [{ pid: 73 }] : []);
+  const receipt = await executeElectronRuntimeLifecycle({ schemaVersion: 1, operation: "electron.runtime.stop", channel: "betahyx", namespace: "stop-test", controlRuntimeRoot: "/control" });
+  expect(receipt).toMatchObject({ remainingPids: [73] });
+  expect(sidecar.stop).toHaveBeenCalledOnce();
 });
